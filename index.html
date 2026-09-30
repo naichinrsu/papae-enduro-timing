@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ระบบจับเวลาหน้างาน - ป่าแป๋เอ็นดูโร่</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <!-- HTML5 QR Code Scanner Library -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Kanit', sans-serif; background: #0b0f19; color: #f8fafc; padding: 12px; }
+    .container { max-width: 480px; margin: 0 auto; }
+    
+    .status-bar { display: flex; justify-content: space-between; align-items: center; background: #131b2e; border: 1px solid #1e293b; padding: 10px 14px; border-radius: 14px; margin-bottom: 12px; font-size: 13px; }
+    .station-btn-group { display: flex; gap: 8px; margin-bottom: 12px; }
+    .station-btn { flex: 1; padding: 12px; border-radius: 14px; font-weight: 900; font-size: 15px; border: 2px solid transparent; cursor: pointer; transition: 0.2s; font-family: 'Kanit', sans-serif; }
+    .station-btn.start { background: #1e293b; color: #10b981; }
+    .station-btn.start.active { background: #10b981; color: #020617; border-color: #34d399; }
+    .station-btn.finish { background: #1e293b; color: #f59e0b; }
+    .station-btn.finish.active { background: #f59e0b; color: #020617; border-color: #fbbf24; }
+
+    /* Camera Section */
+    .scanner-card { background: #131b2e; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; margin-bottom: 14px; }
+    #reader { width: 100%; border: none !important; }
+    .camera-control { padding: 10px; text-align: center; background: #070b14; }
+    .btn-cam { background: #334155; color: #f8fafc; border: none; padding: 8px 16px; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'Kanit', sans-serif; }
+
+    /* Numpad Section */
+    .manual-box { background: #131b2e; border: 1px solid #1e293b; border-radius: 20px; padding: 14px; margin-bottom: 14px; }
+    .bib-display { width: 100%; background: #070b14; border: 2px solid #334155; border-radius: 14px; padding: 10px; font-size: 32px; font-weight: 900; text-align: center; color: #f59e0b; font-family: monospace; margin-bottom: 10px; outline: none; }
+    .numpad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .num-btn { background: #1e293b; border: 1px solid #334155; color: #f8fafc; font-size: 20px; font-weight: 700; padding: 12px 0; border-radius: 12px; cursor: pointer; font-family: monospace; }
+    .num-btn:active { background: #475569; }
+    .btn-action-stamp { grid-column: span 2; background: #f59e0b; color: #020617; font-weight: 900; font-size: 18px; font-family: 'Kanit', sans-serif; border: none; }
+    .btn-action-clear { background: #ef4444; color: #ffffff; font-weight: 900; font-size: 16px; font-family: 'Kanit', sans-serif; border: none; }
+
+    /* Recent Logs */
+    .logs-card { background: #131b2e; border: 1px solid #1e293b; border-radius: 20px; padding: 14px; }
+    .log-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1e293b; font-size: 13px; }
+    .log-item:last-child { border-bottom: none; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- จุดประจำการ & สถานะซิงค์ -->
+    <div class="status-bar">
+      <div>
+        สถานะ: <span id="syncStatus" style="color:#10b981; font-weight:bold;">พร้อมทำงาน</span>
+      </div>
+      <div>
+        ค้างซิงค์: <strong id="queueCount" style="color:#f59e0b;">0</strong> รายการ
+      </div>
+    </div>
+
+    <!-- ปุ่มเลือกจุดปล่อยตัว / เส้นชัย -->
+    <div class="station-btn-group">
+      <button onclick="setStation('START')" id="btnStart" class="station-btn start active">🏁 จุดปล่อยตัว (START)</button>
+      <button onclick="setStation('FINISH')" id="btnFinish" class="station-btn finish">🏁 เข้าเส้นชัย (FINISH)</button>
+    </div>
+
+    <!-- กล้องสแกน QR -->
+    <div class="scanner-card">
+      <div id="reader"></div>
+      <div class="camera-control">
+        <button onclick="toggleCamera()" id="btnToggleCam" class="btn-cam">📷 เปิด/ปิด กล้องสแกน</button>
+      </div>
+    </div>
+
+    <!-- Numpad เผื่อกดมือ -->
+    <div class="manual-box">
+      <input type="text" id="bibInput" class="bib-display" placeholder="พิมพ์เบอร์ BIB" readonly>
+      <div class="numpad-grid">
+        <button onclick="pressNum('1')" class="num-btn">1</button>
+        <button onclick="pressNum('2')" class="num-btn">2</button>
+        <button onclick="pressNum('3')" class="num-btn">3</button>
+        <button onclick="pressNum('4')" class="num-btn">4</button>
+        <button onclick="pressNum('5')" class="num-btn">5</button>
+        <button onclick="pressNum('6')" class="num-btn">6</button>
+        <button onclick="pressNum('7')" class="num-btn">7</button>
+        <button onclick="pressNum('8')" class="num-btn">8</button>
+        <button onclick="pressNum('9')" class="num-btn">9</button>
+        <button onclick="clearBib()" class="num-btn btn-action-clear">ลบ</button>
+        <button onclick="pressNum('0')" class="num-btn">0</button>
+        <button onclick="submitManual()" class="num-btn btn-action-stamp">⚡ บันทึกเวลา</button>
+      </div>
+    </div>
+
+    <!-- ประวัติการกดล่าสุด -->
+    <div class="logs-card">
+      <div style="font-size: 13px; font-weight: bold; color: #94a3b8; margin-bottom: 8px;">ประวัติการบันทึก 5 รายการล่าสุด</div>
+      <div id="recentLogs"></div>
+    </div>
+
+  </div>
+
+  <script>
+    // ⚠️ ใส่ Web App URL ของ Apps Script ตรงนี้
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzUwHYkF7eiFo-F2OR7A-Ht-Uo5_Oizb6LQhiezq2MWQX4wXJZm2dGW8-PnFVhPsK-/exec';
+
+    let currentStation = 'START';
+    let html5QrCode = null;
+    let isCameraRunning = false;
+    let recentList = [];
+
+    function setStation(st) {
+      currentStation = st;
+      document.getElementById('btnStart').className = 'station-btn start ' + (st === 'START' ? 'active' : '');
+      document.getElementById('btnFinish').className = 'station-btn finish ' + (st === 'FINISH' ? 'active' : '');
+    }
+
+    function pressNum(n) {
+      const input = document.getElementById('bibInput');
+      if (input.value.length < 4) input.value += n;
+    }
+
+    function clearBib() {
+      document.getElementById('bibInput').value = '';
+    }
+
+    function submitManual() {
+      const bib = document.getElementById('bibInput').value.trim();
+      if (!bib) return;
+      recordTimestamp(bib);
+      clearBib();
+    }
+
+    // บันทึกเวลาทันที (บันทึกลงเครื่องก่อนเสมอ)
+    function recordTimestamp(bib) {
+      const now = new Date();
+      const rawMs = now.getTime();
+      const timeStr = ('0' + now.getHours()).slice(-2) + ':' + ('0' + now.getMinutes()).slice(-2) + ':' + ('0' + now.getSeconds()).slice(-2);
+
+      const record = {
+        logId: 'LOG-' + Math.random().toString(36).substr(2, 9),
+        bib: bib,
+        actionType: currentStation,
+        recordedAtLocal: timeStr,
+        rawTimeMs: rawMs,
+        deviceNote: 'GitHub Mobile'
+      };
+
+      // เพิ่มลงประวัติหน้าจอ
+      recentList.unshift(record);
+      if (recentList.length > 5) recentList.pop();
+      renderRecent();
+
+      // บันทึกลงคิว LocalStorage
+      let queue = JSON.parse(localStorage.getItem('timing_queue') || '[]');
+      queue.push(record);
+      localStorage.setItem('timing_queue', JSON.stringify(queue));
+      updateQueueUI();
+
+      // สั่นเตือนมือถือ
+      if (navigator.vibrate) navigator.vibrate(100);
+
+      // ส่งข้อมูลขึ้น Google Sheet
+      syncQueue();
+    }
+
+    function renderRecent() {
+      const box = document.getElementById('recentLogs');
+      box.innerHTML = recentList.map(r => `
+        <div class="log-item">
+          <div>
+            <strong style="color:#f59e0b; font-family:monospace; font-size:16px;">#${r.bib}</strong>
+            <span style="font-size:11px; margin-left:6px; color:${r.actionType==='START'?'#10b981':'#f59e0b'};">[${r.actionType}]</span>
+          </div>
+          <div style="font-family:monospace; color:#cbd5e1;">${r.recordedAtLocal}</div>
+        </div>
+      `).join('');
+    }
+
+    function updateQueueUI() {
+      const queue = JSON.parse(localStorage.getItem('timing_queue') || '[]');
+      document.getElementById('queueCount').innerText = queue.length;
+    }
+
+    // ซิงค์ข้อมูลขึ้น Google Sheet ผ่าน API
+    function syncQueue() {
+      let queue = JSON.parse(localStorage.getItem('timing_queue') || '[]');
+      if (queue.length === 0) return;
+
+      document.getElementById('syncStatus').innerText = 'กำลังซิงค์...';
+      document.getElementById('syncStatus').style.color = '#f59e0b';
+
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'logTiming',
+          records: queue
+        })
+      })
+      .then(() => {
+        // เมื่อส่งออกไปสำเร็จ ล้างคิวในเครื่อง
+        localStorage.removeItem('timing_queue');
+        updateQueueUI();
+        document.getElementById('syncStatus').innerText = 'พร้อมทำงาน';
+        document.getElementById('syncStatus').style.color = '#10b981';
+      })
+      .catch(err => {
+        document.getElementById('syncStatus').innerText = 'รอเน็ต (เก็บในเครื่อง)';
+        document.getElementById('syncStatus').style.color = '#ef4444';
+      });
+    }
+
+    // ควบคุมกล้องสแกน
+    function toggleCamera() {
+      if (isCameraRunning) {
+        html5QrCode.stop().then(() => {
+          isCameraRunning = false;
+          document.getElementById('btnToggleCam').innerText = '📷 เปิดกล้องสแกน';
+        });
+      } else {
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 15, qrbox: { width: 220, height: 220 } },
+          (decodedText) => {
+            // เมื่อสแกนเจอ QR Code
+            recordTimestamp(decodedText.trim());
+          },
+          (errorMessage) => { /* กำลังค้นหา QR */ }
+        ).then(() => {
+          isCameraRunning = true;
+          document.getElementById('btnToggleCam').innerText = '🛑 ปิดกล้องสแกน';
+        }).catch(err => {
+          alert('ไม่สามารถเปิดกล้องได้: ' + err);
+        });
+      }
+    }
+
+    // ดึงข้อมูลเก่าที่ค้างส่ง (ถ้ามี)
+    window.onload = function() {
+      updateQueueUI();
+      syncQueue();
+      // เช็กส่งข้อมูลค้างทุกๆ 15 วินาที
+      setInterval(syncQueue, 15000);
+    };
+  </script>
+</body>
+</html>
