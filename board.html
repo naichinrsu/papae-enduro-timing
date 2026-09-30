@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ผลการแข่งขันสด - มิตติ้งป่าแป๋เอ็นดูโร่</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Kanit', sans-serif; background-color: #0b0f19; color: #f8fafc; padding: 15px; }
+    .container { max-width: 960px; margin: 0 auto; }
+    .header-box { background: #131b2e; border: 1px solid #1e293b; border-radius: 20px; padding: 20px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; }
+    .title-h1 { font-size: 24px; font-weight: 900; color: #f59e0b; }
+    .badge-live { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #ef4444; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; display: inline-block; margin-bottom: 5px; }
+    .tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; }
+    .tab-btn { background: #131b2e; border: 1px solid #1e293b; color: #94a3b8; padding: 10px 18px; border-radius: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; font-size: 14px; transition: 0.2s; }
+    .tab-btn.active { background: #f59e0b; color: #020617; border-color: #f59e0b; font-weight: 900; }
+    .table-container { background: #131b2e; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    th { background: #070b14; color: #94a3b8; padding: 14px 16px; font-size: 12px; text-transform: uppercase; }
+    td { padding: 14px 16px; border-top: 1px solid #1e293b; }
+    tr:hover { background: rgba(255, 255, 255, 0.02); }
+    .bib-tag { font-family: monospace; font-size: 18px; font-weight: 900; color: #f59e0b; }
+    .time-font { font-family: monospace; font-weight: bold; font-size: 14px; color: #e2e8f0; }
+    .net-time { font-family: monospace; font-weight: 900; font-size: 16px; color: #10b981; text-align: right; }
+    .rank-circle { display: inline-block; width: 30px; height: 30px; line-height: 30px; text-align: center; border-radius: 50%; font-weight: 900; font-size: 13px; }
+    .rank-1 { background: #f59e0b; color: #020617; }
+    .rank-2 { background: #94a3b8; color: #020617; }
+    .rank-3 { background: #b45309; color: #ffffff; }
+    .btn-refresh { background: #1e293b; border: 1px solid #334155; color: #f59e0b; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-size: 12px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <div class="header-box">
+      <div>
+        <span class="badge-live">● LIVE TIMING (FAST CDN)</span>
+        <h1 class="title-h1">ผลการแข่งขัน มิตติ้งป่าแป๋เอ็นดูโร่</h1>
+        <div style="font-size: 12px; color: #64748b; margin-top: 3px;">อัปเดตผลเวลาและอันดับแบบเรียลไทม์ผ่าน Snaptime Engine</div>
+      </div>
+      <div style="text-align: right;">
+        <div id="lastUpdated" style="font-size: 12px; color: #f59e0b; font-family: monospace; margin-bottom: 6px;">กำลังโหลด...</div>
+        <button onclick="fetchLeaderboard()" class="btn-refresh">🔄 รีเฟรช</button>
+      </div>
+    </div>
+
+    <!-- แท็บเลือกรุ่น 1-5 -->
+    <div class="tabs">
+      <button onclick="switchTab('รุ่นที่ 1')" id="tab_1" class="tab-btn active">รุ่น 1: โอเพ่น</button>
+      <button onclick="switchTab('รุ่นที่ 2')" id="tab_2" class="tab-btn">รุ่น 2: Production</button>
+      <button onclick="switchTab('รุ่นที่ 3')" id="tab_3" class="tab-btn">รุ่น 3: บังลม</button>
+      <button onclick="switchTab('รุ่นที่ 4')" id="tab_4" class="tab-btn">รุ่น 4: ขี่เดี่ยว</button>
+      <button onclick="switchTab('รุ่นที่ 5')" id="tab_5" class="tab-btn">รุ่น 5: แอ่วดอย</button>
+    </div>
+
+    <!-- ตารางลีดเดอร์บอร์ด -->
+    <div class="table-container">
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th style="text-align: center; width: 60px;">อันดับ</th>
+              <th style="text-align: center; width: 80px;">BIB</th>
+              <th>ชื่อทีม / รถแข่ง</th>
+              <th style="text-align: center;">เวลาปล่อยตัว</th>
+              <th style="text-align: center;">เวลาเข้าเส้น</th>
+              <th style="text-align: right;">เวลารวม (Net Time)</th>
+            </tr>
+          </thead>
+          <tbody id="boardBody">
+            <tr>
+              <td colspan="6" style="text-align: center; padding: 40px; color: #64748b;">กำลังดึงข้อมูลเวลาล่าสุด...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ⚠️ ใส่ URL Web App ของ Apps Script ที่ลงท้ายด้วย /exec ตรงนี้
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzUwHYkF7eiFo-F2OR7A-Ht-Uo5_Oizb6LQhiezq2MWQX4wXJZm2dGW8-PnFVhPsK-/exec';
+
+    let currentCategory = 'รุ่นที่ 1';
+    let globalData = {};
+
+    window.onload = function() {
+      fetchLeaderboard();
+      // เช็กอัปเดตอัตโนมัติทุก 10 วินาที
+      setInterval(() => {
+        if (!document.hidden) fetchLeaderboard();
+      }, 10000);
+    };
+
+    function switchTab(cat) {
+      currentCategory = cat;
+      const buttons = document.querySelectorAll('.tab-btn');
+      buttons.forEach(b => b.classList.remove('active'));
+
+      const tabMap = {
+        'รุ่นที่ 1': 'tab_1',
+        'รุ่นที่ 2': 'tab_2',
+        'รุ่นที่ 3': 'tab_3',
+        'รุ่นที่ 4': 'tab_4',
+        'รุ่นที่ 5': 'tab_5'
+      };
+      if (document.getElementById(tabMap[cat])) {
+        document.getElementById(tabMap[cat]).classList.add('active');
+      }
+
+      renderTable();
+    }
+
+    function fetchLeaderboard() {
+      document.getElementById('lastUpdated').innerText = 'กำลังอัปเดต...';
+      
+      fetch(APPS_SCRIPT_URL + '?api=leaderboard')
+        .then(res => res.json())
+        .then(res => {
+          if (res && res.success) {
+            globalData = res.data;
+            const now = new Date();
+            document.getElementById('lastUpdated').innerText = (res.cached ? '⚡ ' : '● ') + 'อัปเดต: ' + now.toLocaleTimeString('th-TH');
+            renderTable();
+          }
+        })
+        .catch(err => {
+          document.getElementById('lastUpdated').innerText = 'เชื่อมต่อล้มเหลว';
+        });
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('boardBody');
+      const list = globalData[currentCategory] || [];
+
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:40px; color:#64748b;">ยังไม่มีข้อมูลเวลาของ ${currentCategory}</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      list.forEach((item, index) => {
+        let rankBadge = `<span style="font-weight:bold; color:#64748b;">${item.rank}</span>`;
+        if (item.rank === 1) rankBadge = '<span class="rank-circle rank-1">1</span>';
+        if (item.rank === 2) rankBadge = '<span class="rank-circle rank-2">2</span>';
+        if (item.rank === 3) rankBadge = '<span class="rank-circle rank-3">3</span>';
+
+        const isFinished = (item.status === 'FINISHED' && item.durationMs);
+
+        html += `
+          <tr>
+            <td style="text-align: center;">${rankBadge}</td>
+            <td style="text-align: center;"><span class="bib-tag">#${item.bib}</span></td>
+            <td>
+              <div style="font-weight: bold; color: #ffffff; font-size: 15px;">${item.teamName}</div>
+              <div style="font-size: 12px; color: #94a3b8;">
+                ${item.driver1 ? item.driver1.name : ''}
+                ${item.crossClass1 ? '<span style="color:#f59e0b; background:rgba(245,158,11,0.15); padding:1px 6px; border-radius:6px; font-size:10px;">ควบรุ่น 1</span>' : ''}
+              </div>
+            </td>
+            <td style="text-align: center;" class="time-font">${item.startTimeStr}</td>
+            <td style="text-align: center;" class="time-font">${item.finishTimeStr}</td>
+            <td class="net-time" style="${isFinished ? 'color:#10b981;' : 'color:#f59e0b; font-size:12px;'}">
+              ${item.durationStr}
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
