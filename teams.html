@@ -27,6 +27,7 @@
     .bib-badge { font-family: monospace; font-size: 20px; font-weight: 900; color: #f59e0b; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 12px; border-radius: 12px; }
     
     .empty-state { text-align: center; padding: 40px; color: #64748b; background: #131b2e; border-radius: 16px; border: 1px solid #1e293b; }
+    .btn-retry { margin-top: 10px; background: #f59e0b; color: #000; border: none; padding: 6px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-family: 'Kanit'; }
   </style>
 </head>
 <body>
@@ -55,8 +56,8 @@
   </div>
 
   <script>
-    // ⚠️ ใส่ Web App URL ของ Apps Script (ที่ลงท้ายด้วย /exec) ตรงนี้
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzUwHYkF7eiFo-F2OR7A-Ht-Uo5_Oizb6LQhiezq2MWQX4wXJZm2dGW8-PnFVhPsK-/exec';
+    // ⚠️ วาง Web App URL ที่ลงท้ายด้วย /exec ให้ถูกต้อง
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzUwHYkF7eiFo-F2OR7A-Ht-Uo5_Oizb6LQhiezq2MWQX4wXJZm2dGW8-PnFVhPsK-/exec'; 
 
     let currentCat = 'รุ่นที่ 1';
     let allRacers = {};
@@ -82,18 +83,37 @@
     }
 
     function fetchTeams() {
-      // เรียกใช้ API Leaderboard เดิมที่เตรียมข้อมูลแยกตามรุ่นไว้อยู่แล้ว
-      fetch(APPS_SCRIPT_URL + 'https://script.google.com/macros/s/AKfycbzzUwHYkF7eiFo-F2OR7A-Ht-Uo5_Oizb6LQhiezq2MWQX4wXJZm2dGW8-PnFVhPsK-/exec?api=leaderboard')
-        .then(res => res.json())
-        .then(res => {
-          if (res && res.success) {
-            allRacers = res.data;
-            renderTeams();
-          }
-        })
-        .catch(err => {
-          document.getElementById('teamList').innerHTML = '<div class="empty-state" style="color:#ef4444;">ไม่สามารถเชื่อมต่อข้อมูลได้</div>';
-        });
+      const container = document.getElementById('teamList');
+      container.innerHTML = '<div class="empty-state">กำลังดึงข้อมูลรายชื่อทีม...</div>';
+
+      // ดึงผ่าน redirect: follow ป้องกันปัญหา Google Apps Script 302 Redirect
+      const requestUrl = APPS_SCRIPT_URL + (APPS_SCRIPT_URL.includes('?') ? '&' : '?') + 'api=leaderboard&t=' + new Date().getTime();
+
+      fetch(requestUrl, {
+        method: 'GET',
+        redirect: 'follow'
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(res => {
+        if (res && res.success) {
+          allRacers = res.data;
+          renderTeams();
+        } else {
+          throw new Error(res ? res.message : 'Invalid response');
+        }
+      })
+      .catch(err => {
+        console.error('Fetch error:', err);
+        container.innerHTML = `
+          <div class="empty-state" style="color:#ef4444;">
+            ไม่สามารถเชื่อมต่อข้อมูลได้ (${err.message})<br>
+            <button onclick="fetchTeams()" class="btn-retry">🔄 ลองใหม่อีกครั้ง</button>
+          </div>
+        `;
+      });
     }
 
     function renderTeams() {
