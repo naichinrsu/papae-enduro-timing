@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>รายชื่อผู้สมัครแยกตามรุ่น - ป่าแป๋เอ็นดูโร่</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Kanit', sans-serif; background-color: #0b0f19; color: #f8fafc; padding: 15px; }
+    .container { max-width: 800px; margin: 0 auto; }
+    
+    .header-box { background: #131b2e; border: 1px solid #1e293b; border-radius: 20px; padding: 20px; margin-bottom: 16px; text-align: center; }
+    .title-h1 { font-size: 22px; font-weight: 900; color: #f59e0b; }
+    
+    /* Tabs */
+    .tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 16px; }
+    .tab-btn { background: #131b2e; border: 1px solid #1e293b; color: #94a3b8; padding: 10px 16px; border-radius: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; font-size: 13px; transition: 0.2s; font-family: 'Kanit', sans-serif; }
+    .tab-btn.active { background: #f59e0b; color: #020617; border-color: #f59e0b; font-weight: 900; }
+    
+    /* Team Card List */
+    .team-grid { display: flex; flex-direction: column; gap: 10px; }
+    .team-card { background: #131b2e; border: 1px solid #1e293b; border-radius: 16px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; }
+    .team-info { display: flex; flex-direction: column; gap: 4px; }
+    .team-name { font-size: 16px; font-weight: 900; color: #ffffff; }
+    .driver-sub { font-size: 13px; color: #94a3b8; }
+    .bib-badge { font-family: monospace; font-size: 20px; font-weight: 900; color: #f59e0b; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 12px; border-radius: 12px; }
+    
+    .empty-state { text-align: center; padding: 40px; color: #64748b; background: #131b2e; border-radius: 16px; border: 1px solid #1e293b; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <div class="header-box">
+      <h1 class="title-h1">🏍️ รายชื่อทีมที่ลงแข่งขัน</h1>
+      <div style="font-size: 13px; color: #94a3b8; margin-top: 4px;">มิตติ้งป่าแป๋เอ็นดูโร่ | อัปเดตล่าสุด</div>
+    </div>
+
+    <!-- ปุ่มเลือกดูตามรุ่น -->
+    <div class="tabs">
+      <button onclick="switchTab('รุ่นที่ 1')" id="tab_1" class="tab-btn active">รุ่น 1: โอเพ่น</button>
+      <button onclick="switchTab('รุ่นที่ 2')" id="tab_2" class="tab-btn">รุ่น 2: Production</button>
+      <button onclick="switchTab('รุ่นที่ 3')" id="tab_3" class="tab-btn">รุ่น 3: บังลม</button>
+      <button onclick="switchTab('รุ่นที่ 4')" id="tab_4" class="tab-btn">รุ่น 4: ขี่เดี่ยว</button>
+      <button onclick="switchTab('รุ่นที่ 5')" id="tab_5" class="tab-btn">รุ่น 5: แอ่วดอย</button>
+    </div>
+
+    <!-- รายการทีม -->
+    <div id="teamList" class="team-grid">
+      <div class="empty-state">กำลังดึงข้อมูลรายชื่อทีม...</div>
+    </div>
+
+  </div>
+
+  <script>
+    // ⚠️ ใส่ Web App URL ของ Apps Script (ที่ลงท้ายด้วย /exec) ตรงนี้
+    const APPS_SCRIPT_URL = 'ใส่_URL_WEBAPP_ของ_APPSCRIPT_ที่ลงท้ายด้วย_EXEC_ตรงนี้';
+
+    let currentCat = 'รุ่นที่ 1';
+    let allRacers = {};
+
+    window.onload = function() {
+      fetchTeams();
+    };
+
+    function switchTab(cat) {
+      currentCat = cat;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      const tabMap = {
+        'รุ่นที่ 1': 'tab_1',
+        'รุ่นที่ 2': 'tab_2',
+        'รุ่นที่ 3': 'tab_3',
+        'รุ่นที่ 4': 'tab_4',
+        'รุ่นที่ 5': 'tab_5'
+      };
+      if (document.getElementById(tabMap[cat])) {
+        document.getElementById(tabMap[cat]).classList.add('active');
+      }
+      renderTeams();
+    }
+
+    function fetchTeams() {
+      // เรียกใช้ API Leaderboard เดิมที่เตรียมข้อมูลแยกตามรุ่นไว้อยู่แล้ว
+      fetch(APPS_SCRIPT_URL + 'https://script.google.com/macros/s/AKfycbzzUwHYkF7eiFo-F2OR7A-Ht-Uo5_Oizb6LQhiezq2MWQX4wXJZm2dGW8-PnFVhPsK-/exec?api=leaderboard')
+        .then(res => res.json())
+        .then(res => {
+          if (res && res.success) {
+            allRacers = res.data;
+            renderTeams();
+          }
+        })
+        .catch(err => {
+          document.getElementById('teamList').innerHTML = '<div class="empty-state" style="color:#ef4444;">ไม่สามารถเชื่อมต่อข้อมูลได้</div>';
+        });
+    }
+
+    function renderTeams() {
+      const container = document.getElementById('teamList');
+      const list = allRacers[currentCat] || [];
+
+      if (list.length === 0) {
+        container.innerHTML = `<div class="empty-state">ยังไม่มีรายชื่อทีมใน ${currentCat}</div>`;
+        return;
+      }
+
+      let html = '';
+      list.forEach((item, index) => {
+        html += `
+          <div class="team-card">
+            <div class="team-info">
+              <div class="team-name">${index + 1}. ${item.teamName}</div>
+              <div class="driver-sub">
+                ${item.driver1 ? 'นักแข่ง: ' + item.driver1.name : ''}
+                ${item.crossClass1 ? '<span style="color:#f59e0b; background:rgba(245,158,11,0.15); padding:1px 6px; border-radius:6px; font-size:11px; margin-left:6px;">ควบรุ่น 1</span>' : ''}
+              </div>
+            </div>
+            <div>
+              <span class="bib-badge">#${item.bib}</span>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
