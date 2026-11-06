@@ -7,7 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <!-- Library กล้องสแกน QR Code (html5-qrcode) -->
   <script src="https://unpkg.com/html5-qrcode"></script>
   <style>
     body { font-family: 'Kanit', sans-serif; }
@@ -111,13 +110,15 @@
     let html5QrCode = null;
     let isCamScanning = false;
 
-    // ตัวแปรควบคุมระบบป้องกันการสแกนซ้ำ & หน่วงเวลา
+    // ตัวแปรควบคุมระบบป้องกันการสแกนซ้ำ & ลูปกล้อง
     let isProcessingScan = false;
     let lastScannedBib = null;
     let lastScannedTime = 0;
-    const DUPLICATE_COOLDOWN_MS = 6000;
+    const DUPLICATE_COOLDOWN_MS = 4000; // คูลดาวน์ 4 วินาทีเฉพาะเบอร์เดิมที่จ่อค้างหน้าเลนส์
 
-    // เสียงสัญญาณ Beep (Web Audio API)
+    let isSyncing = false;
+
+    // สัญญาณเสียง Beep (Web Audio API)
     function playBeepSound() {
       try {
         const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -127,14 +128,12 @@
         const gain = audioCtx.createGain();
         osc.type = 'sine';
         osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start();
         osc.stop(audioCtx.currentTime + 0.15);
-      } catch(e) {
-        console.warn('Audio not supported:', e);
-      }
+      } catch(e) {}
     }
 
     // จัดการสถานะ Network
@@ -157,7 +156,6 @@
       }
     }
 
-    // สลับจุดปล่อยตัว / เส้นชัย
     function setMode(mode) {
       currentMode = mode;
       const btnStart = document.getElementById('btnModeStart');
@@ -171,7 +169,6 @@
       }
     }
 
-    // แป้นตัวเลข Numpad
     function appendNum(num) {
       const input = document.getElementById('inputBib');
       if (input) input.value = input.value + num;
@@ -187,13 +184,14 @@
       if (input) input.value = '';
     }
 
-    // บันทึกเวลา
-    function recordTime(bibValue, isFromCamera = false) {
+    // ฟังก์ชันบันทึกเวลา (แยกการทำงานของกล้องออกจากการส่งขึ้นคลาวด์)
+    function recordTime(bibValue) {
       const input = document.getElementById('inputBib');
       const bib = (bibValue || (input ? input.value : '')).toString().trim();
 
       if (!bib) {
         Swal.fire({ icon: 'warning', title: 'กรุณาใส่เบอร์ BIB', timer: 1000, showConfirmButton: false });
+        isProcessingScan = false;
         return;
       }
 
@@ -209,14 +207,18 @@
         synced: false
       };
 
+      // 1. บันทึกลงเครื่องทันที
       saveToLocal(logRecord);
       if (input) input.value = '';
 
+      // 2. เสียงปี๊บและสั่นเตือน
       playBeepSound();
       if (navigator.vibrate) navigator.vibrate(100);
 
+      // 3. แสดงประวัติบนจอ
       renderHistory();
 
+      // 4. แสดง Pop-up สรุปเวลา 1.2 วินาที แล้วกล้องสแตนบายอ่านต่อทันที
       const isStart = (currentMode === 'START');
       Swal.fire({
         title: `<div style="font-size: 15px; font-weight: 700; color: ${isStart ? '#f59e0b' : '#10b981'}; text-transform: uppercase; letter-spacing: 1px;">บันทึกจุด ${currentMode} สำเร็จ</div>`,
@@ -227,19 +229,22 @@
           <div style="font-family: monospace; font-size: 16px; color: #94a3b8; font-weight: bold;">
             ⏱ เวลา ${localTimeString}
           </div>
-          <div style="font-size: 11px; color: #64748b; margin-top: 12px;">
-            (พร้อมสแกนคันต่อไปต่อเนื่อง...)
-          </div>
         `,
         background: '#0f172a',
         showConfirmButton: false,
-        timer: 1500,
+        timer: 1200,
         timerProgressBar: true,
         willClose: () => {
           isProcessingScan = false;
         }
       });
 
+      // ปลดล็อกตัวแปรกล้องแบบชัวร์ 100%
+      setTimeout(() => {
+        isProcessingScan = false;
+      }, 1300);
+
+      // 5. ส่งขึ้นคลาวด์แบบเบื้องหลัง
       if (navigator.onLine) {
         syncPendingData();
       }
@@ -262,21 +267,28 @@
       const badge = document.getElementById('pendingCountBadge');
       const num = document.getElementById('pendingNum');
       if (!badge || !num) return;
+
       if (pending.length > 0) {
         badge.classList.remove('hidden');
-        num.innerText = pending.length;
+        badge.innerHTML = `ค้างส่ง <span id="pendingNum">${pending.length}</span> รายการ (แตะเพื่อซิงค์)`;
       } else {
         badge.classList.add('hidden');
       }
     }
 
+    // ซิงค์ข้อมูลขึ้น Google Sheets พร้อม Timeout 5 วินาที
     function syncPendingData() {
+      if (isSyncing) return;
       const list = getStoredLogs();
       const pending = list.filter(x => !x.synced);
       if (pending.length === 0 || !navigator.onLine) return;
 
+      isSyncing = true;
       const badge = document.getElementById('pendingCountBadge');
       if (badge) badge.innerText = 'กำลังส่งข้อมูล... ⏳';
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       fetch(APPS_SCRIPT_URL, {
         method: 'POST',
@@ -286,10 +298,13 @@
         body: JSON.stringify({
           action: 'logTiming',
           records: pending
-        })
+        }),
+        signal: controller.signal
       })
       .then(res => res.json())
       .then(res => {
+        clearTimeout(timeoutId);
+        isSyncing = false;
         if (res && res.success) {
           const updated = list.map(item => ({ ...item, synced: true }));
           localStorage.setItem('timing_logs', JSON.stringify(updated));
@@ -300,7 +315,9 @@
         }
       })
       .catch(err => {
-        console.error('Sync pending logs error:', err);
+        clearTimeout(timeoutId);
+        isSyncing = false;
+        console.warn('Sync pending logs failed or timed out:', err);
         updatePendingBadge();
       });
     }
@@ -356,7 +373,7 @@
 
         const qrBoxConfig = function(viewfinderWidth, viewfinderHeight) {
           const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-          const boxSize = Math.floor(minEdge * 0.7);
+          const boxSize = Math.floor(minEdge * 0.75);
           return { width: boxSize, height: boxSize };
         };
 
@@ -368,12 +385,12 @@
 
             if (isProcessingScan) return;
 
-            // ดึงตัวเลข BIB ด้วย Regex สะอาด ไม่ Error
             const match = decodedText.match(/[0-9]+/);
             const bib = match ? match[0] : null;
 
             if (!bib) return;
 
+            // ป้องกันยิงเบอร์เดิมซ้ำภายใน 4 วินาที (ถ้าเป็นเบอร์อื่น สแกนได้ทันที)
             if (bib === lastScannedBib && (now - lastScannedTime) < DUPLICATE_COOLDOWN_MS) {
               return;
             }
@@ -382,15 +399,10 @@
             lastScannedBib = bib;
             lastScannedTime = now;
 
-            recordTime(bib, true);
+            recordTime(bib);
           },
           (errorMessage) => {}
-        ).then(() => {
-          btn.innerText = 'ปิดกล้อง';
-          btn.classList.remove('text-amber-400', 'bg-slate-800');
-          btn.classList.add('bg-red-600', 'text-white');
-          isCamScanning = true;
-        }).catch(err => {
+        ).catch(err => {
           console.error("Camera start error:", err);
           container.classList.add('hidden');
           btn.innerText = 'เปิดกล้องสแกน';
@@ -419,7 +431,6 @@
       }
     }
 
-    // เริ่มต้นระบบเมื่อโหลดหน้าเสร็จ
     window.onload = function() {
       updateOnlineStatus();
       updatePendingBadge();
