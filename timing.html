@@ -270,14 +270,19 @@
       }
     }
 
-    // ซิงค์ข้อมูลขึ้น Google Sheets ผ่าน fetch API (POST JSON)
+    // ซิงค์ข้อมูลขึ้น Google Sheets พร้อมระบบติดตามผล
     function syncPendingData() {
       const list = getStoredLogs();
       const pending = list.filter(x => !x.synced);
       if (pending.length === 0 || !navigator.onLine) return;
 
+      const badge = document.getElementById('pendingCountBadge');
+      if (badge) badge.innerText = 'กำลังส่งข้อมูล... ⏳';
+
       fetch(APPS_SCRIPT_URL, {
         method: 'POST',
+        mode: 'cors',
+        redirect: 'follow',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'logTiming',
@@ -287,14 +292,20 @@
       .then(res => res.json())
       .then(res => {
         if (res && res.success) {
+          // อัปเดตรายการที่ค้างส่งให้เป็น synced: true
           const updated = list.map(item => ({ ...item, synced: true }));
           localStorage.setItem('timing_logs', JSON.stringify(updated));
           updatePendingBadge();
           renderHistory();
+          console.log('ซิงค์เวลาลง Google Sheets สำเร็จ:', res.count, 'รายการ');
+        } else {
+          console.warn('ฝั่งเซิร์ฟเวอร์ตอบกลับไม่สำเร็จ:', res);
+          updatePendingBadge();
         }
       })
       .catch(err => {
-        console.error('Sync pending logs error:', err);
+        console.error('เชื่อมต่อเพื่อซิงค์ข้อมูลไม่สำเร็จ:', err);
+        updatePendingBadge();
       });
     }
 
