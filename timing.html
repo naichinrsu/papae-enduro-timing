@@ -334,55 +334,87 @@
     }
 
     // เปิด/ปิดกล้อง และสแกน QR Code แบบลื่นไหลไม่ค้าง pause
+   // เปิด/ปิดกล้อง และสแกน QR Code แบบปรับขนาดกล้องอัตโนมัติ
     function toggleCamera() {
       const container = document.getElementById('reader-container');
       const btn = document.getElementById('btnToggleCam');
 
       if (!isCamScanning) {
         container.classList.remove('hidden');
-        btn.innerText = 'ปิดกล้อง';
-        btn.classList.remove('text-amber-400', 'bg-slate-800');
-        btn.classList.add('bg-red-600', 'text-white');
+        btn.innerText = 'กำลังเปิดกล้อง...';
+
+        // เคลียร์ตัวอ่านเดิมก่อนสร้างใหม่ ป้องกันอินสแตนซ์ค้าง
+        if (html5QrCode) {
+          try { html5QrCode.clear(); } catch(e){}
+        }
 
         html5QrCode = new Html5Qrcode("reader");
+
+        // คำนวณกรอบสแกนตามความกว้างจอจริง (สแกนง่ายและไม่พังบนมือถือ)
+        const qrBoxFunction = function(viewfinderWidth, viewfinderHeight) {
+          const minEdgePercentage = 0.7; // ใช้พื้นที่ 70% ของจอ
+          const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+          const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+          return {
+            width: qrboxSize,
+            height: qrboxSize
+          };
+        };
+
+        const config = {
+          fps: 15,
+          qrbox: qrBoxFunction,
+          aspectRatio: 1.0
+        };
+
         html5QrCode.start(
-          { facingMode: "environment" },
-          { fps: 12, qrbox: { width: 220, height: 220 } },
+          { facingMode: "environment" }, // บังคับใช้กล้องหลัง
+          config,
           (decodedText) => {
             const now = Date.now();
 
-            // 1. ถ้ากำลังอยู่ในช่วงบันทึก/แสดงผลคันก่อนหน้า ให้ปล่อยผ่านโดยไม่ต้องหยุดกล้อง
             if (isProcessingScan) return;
 
-            // 2. ดึงเฉพาะตัวเลข BIB
             let bibMatch = decodedText.match(/\d+/);
             let bib = bibMatch ? bibMatch[0] : null;
 
             if (!bib) return;
 
-            // 3. ป้องกันยิงเบอร์เดิมซ้ำภายใน 6 วินาที
+            // คูลดาวน์ 6 วินาที ป้องกันเบอร์เดิมยิงซ้ำ
             if (bib === lastScannedBib && (now - lastScannedTime) < DUPLICATE_COOLDOWN_MS) {
               return;
             }
 
-            // ล็อกแฟล็กเพื่อบันทึกผล
             isProcessingScan = true;
             lastScannedBib = bib;
             lastScannedTime = now;
 
-            // ส่งไปบันทึกเวลา (กล้องยังทำงานสดต่อเนื่อง ไม่ค้าง Scanner paused)
             recordTime(bib, true);
           },
           (errorMessage) => {}
-        ).catch(err => {
-          Swal.fire('กล้องขัดข้อง', 'ไม่สามารถเปิดกล้องได้: ' + err, 'error');
-          toggleCamera();
+        ).then(() => {
+          btn.innerText = 'ปิดกล้อง';
+          btn.classList.remove('text-amber-400', 'bg-slate-800');
+          btn.classList.add('bg-red-600', 'text-white');
+          isCamScanning = true;
+        }).catch(err => {
+          console.error("Camera start error:", err);
+          container.classList.add('hidden');
+          btn.innerText = 'เปิดกล้องสแกน';
+          btn.classList.remove('bg-red-600', 'text-white');
+          btn.classList.add('text-amber-400', 'bg-slate-800');
+          isCamScanning = false;
+          Swal.fire({
+            icon: 'error',
+            title: 'เปิดกล้องไม่สำเร็จ',
+            text: 'กรุณาอนุญาตสิทธิ์เข้าถึงกล้องบนเบราว์เซอร์ (' + err + ')'
+          });
         });
 
-        isCamScanning = true;
       } else {
         if (html5QrCode) {
           html5QrCode.stop().then(() => {
+            html5QrCode.clear();
             container.classList.add('hidden');
             btn.innerText = 'เปิดกล้องสแกน';
             btn.classList.remove('bg-red-600', 'text-white');
