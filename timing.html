@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>ระบบจับเวลาหน้างาน - ป่าแป๋เอ็นดูโร่</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;700;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -22,13 +23,14 @@
           <span id="netStatusDot" class="w-3.5 h-3.5 rounded-full bg-emerald-500 animate-pulse"></span>
           <span id="netStatusText" class="text-xs font-bold text-emerald-400">ONLINE</span>
         </div>
-        <div id="pendingCountBadge" class="hidden px-2.5 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs font-bold rounded-lg cursor-pointer" onclick="syncPendingData()">
-          ค้างส่ง <span id="pendingNum">0</span> รายการ (กดซิงค์)
+        <div id="pendingCountBadge" class="hidden px-2.5 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs font-bold rounded-lg cursor-pointer transition hover:bg-amber-500/30" onclick="syncPendingData()">
+          ค้างส่ง <span id="pendingNum">0</span> รายการ (แตะเพื่อซิงค์)
         </div>
       </div>
+
       <!-- สลับจุดปล่อยตัว (START) / เส้นชัย (FINISH) -->
       <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800 text-center font-bold">
-        <button id="btnModeStart" onclick="setMode('START')" class="py-2.5 rounded-lg text-sm transition bg-amber-500 text-slate-950 shadow-md">
+        <button id="btnModeStart" onclick="setMode('START')" class="py-2.5 rounded-lg text-sm transition bg-amber-500 text-slate-950 shadow-md font-black">
           🟢 จุดปล่อยตัว (START)
         </button>
         <button id="btnModeFinish" onclick="setMode('FINISH')" class="py-2.5 rounded-lg text-sm text-slate-400 transition hover:text-white">
@@ -100,29 +102,34 @@
   </div>
 
   <script>
-    let currentMode = 'START'; // 'START' หรือ 'FINISH'
+    // ==========================================
+    // ⚠️ ระบุ Web App URL ของ Apps Script (ที่ลงท้ายด้วย /exec)
+    // ==========================================
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzUwHYkF7eiFo-F2OR7A-Ht-Uo5_Oizb6LQhiezq2MWQX4wXJZm2dGW8-PnFVhPsK-/exec';
+
+    let currentMode = 'START';
     let html5QrCode = null;
     let isCamScanning = false;
 
-    // ตัวแปรควบคุมระบบป้องกันการสแกนซ้ำ & หน่วงสแตนบาย
+    // ตัวแปรควบคุมระบบป้องกันการสแกนซ้ำ
     let isProcessingScan = false;
     let lastScannedBib = null;
     let lastScannedTime = 0;
     const DUPLICATE_COOLDOWN_MS = 6000; // ห้ามสแกนเบอร์เดิมซ้ำภายใน 6 วินาที
 
-    // เสียงสัญญาณ Beep สไตล์ Racing
+    // สัญญาณเสียง Beep (Web Audio API)
     function playBeepSound() {
       try {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // โน้ต A5 เสียงใส คมชัด
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // โน้ต A5 ใส ชัดเจน
         gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.15); // ดัง 150 ms
+        osc.stop(audioCtx.currentTime + 0.15); // ดัง 150ms
       } catch(e) {}
     }
 
@@ -150,10 +157,10 @@
       const btnStart = document.getElementById('btnModeStart');
       const btnFinish = document.getElementById('btnModeFinish');
       if (mode === 'START') {
-        btnStart.className = "py-2.5 rounded-lg text-sm transition bg-amber-500 text-slate-950 shadow-md font-bold";
+        btnStart.className = "py-2.5 rounded-lg text-sm transition bg-amber-500 text-slate-950 shadow-md font-black";
         btnFinish.className = "py-2.5 rounded-lg text-sm text-slate-400 transition hover:text-white";
       } else {
-        btnFinish.className = "py-2.5 rounded-lg text-sm transition bg-emerald-500 text-slate-950 shadow-md font-bold";
+        btnFinish.className = "py-2.5 rounded-lg text-sm transition bg-emerald-500 text-slate-950 shadow-md font-black";
         btnStart.className = "py-2.5 rounded-lg text-sm text-slate-400 transition hover:text-white";
       }
     }
@@ -172,7 +179,7 @@
       document.getElementById('inputBib').value = '';
     }
 
-    // บันทึกเวลา
+    // ฟังก์ชันบันทึกเวลา
     function recordTime(bibValue, isFromCamera = false) {
       const input = document.getElementById('inputBib');
       const bib = (bibValue || input.value).toString().trim();
@@ -194,17 +201,17 @@
         synced: false
       };
 
-      // บันทึกลง LocalStorage
+      // บันทึกลง LocalStorage ในเครื่อง
       saveToLocal(logRecord);
       input.value = '';
 
-      // เสียงและสั่น
+      // ส่งสัญญาณเสียงและสั่น
       playBeepSound();
       if (navigator.vibrate) navigator.vibrate(100);
 
       renderHistory();
 
-      // แสดง Popup ยืนยันผลให้กรรมการเห็นชัดๆ 2 วินาที แล้วกล้องสแตนบายต่อ
+      // แสดง Popup สรุปเบอร์และเวลา 1.8 วินาที
       const isStart = (currentMode === 'START');
       Swal.fire({
         title: `<div style="font-size: 15px; font-weight: 700; color: ${isStart ? '#f59e0b' : '#10b981'}; text-transform: uppercase; letter-spacing: 1px;">บันทึกจุด ${currentMode} สำเร็จ</div>`,
@@ -221,10 +228,9 @@
         `,
         background: '#0f172a',
         showConfirmButton: false,
-        timer: 1800, // โชว์ค้างไว้ 1.8 วินาที
+        timer: 1800,
         timerProgressBar: true,
         willClose: () => {
-          // ปลดล็อกระบบสแกน พร้อมรับคันต่อไป
           if (isFromCamera) {
             isProcessingScan = false;
             if (html5QrCode && isCamScanning) {
@@ -234,6 +240,7 @@
         }
       });
 
+      // ซิงค์ขึ้น Google Sheets
       if (navigator.onLine) {
         syncPendingData();
       }
@@ -263,21 +270,32 @@
       }
     }
 
+    // ซิงค์ข้อมูลขึ้น Google Sheets ผ่าน fetch API (POST JSON)
     function syncPendingData() {
       const list = getStoredLogs();
       const pending = list.filter(x => !x.synced);
       if (pending.length === 0 || !navigator.onLine) return;
-      
-      google.script.run
-        .withSuccessHandler(function(res) {
-          if (res && res.success) {
-            const updated = list.map(item => ({ ...item, synced: true }));
-            localStorage.setItem('timing_logs', JSON.stringify(updated));
-            updatePendingBadge();
-            renderHistory();
-          }
+
+      fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'logTiming',
+          records: pending
         })
-        .logTimingRecords(pending);
+      })
+      .then(res => res.json())
+      .then(res => {
+        if (res && res.success) {
+          const updated = list.map(item => ({ ...item, synced: true }));
+          localStorage.setItem('timing_logs', JSON.stringify(updated));
+          updatePendingBadge();
+          renderHistory();
+        }
+      })
+      .catch(err => {
+        console.error('Sync pending logs error:', err);
+      });
     }
 
     function renderHistory() {
@@ -311,7 +329,7 @@
       container.innerHTML = html;
     }
 
-    // จัดการเปิด/ปิดกล้อง และลูปสแกน QR Code แบบไม่ยิงซ้ำ
+    // เปิด/ปิดกล้อง และสแกน QR Code พร้อมล็อกการยิงซ้ำ
     function toggleCamera() {
       const container = document.getElementById('reader-container');
       const btn = document.getElementById('btnToggleCam');
@@ -329,10 +347,10 @@
           (decodedText) => {
             const now = Date.now();
 
-            // 1. ถ้ากำลังแสดงผล Pop-up ของคันเดิมอยู่ ให้ข้ามทันที
+            // 1. ถ้ากำลังแสดงผล Popup ของคันก่อนหน้าอยู่ ให้ข้ามทันที
             if (isProcessingScan) return;
 
-            // ดึงเฉพาะตัวเลข BIB จากข้อความ QR Code
+            // ดึงเฉพาะตัวเลข BIB
             let bibMatch = decodedText.match(/\d+/);
             let bib = bibMatch ? bibMatch[0] : null;
 
@@ -343,15 +361,13 @@
               return;
             }
 
-            // 3. ล็อกสถานะเพื่อพักการตรวจจับ และบันทึกเวลา
+            // 3. ล็อกสถานะ พักกล้อง และส่งไปบันทึกเวลา
             isProcessingScan = true;
             lastScannedBib = bib;
             lastScannedTime = now;
 
-            // พักกล้องชั่วคราว
             try { html5QrCode.pause(); } catch(e){}
 
-            // ส่งข้อมูลไปบันทึกเวลาและแสดงผล
             recordTime(bib, true);
           },
           (errorMessage) => {}
