@@ -30,10 +30,10 @@
 
       <!-- สลับจุดปล่อยตัว (START) / เส้นชัย (FINISH) -->
       <div class="grid grid-cols-2 gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800 text-center font-bold">
-        <button id="btnModeStart" onclick="setMode('START')" class="py-2.5 rounded-lg text-sm transition bg-amber-500 text-slate-950 shadow-md font-black">
+        <button type="button" id="btnModeStart" onclick="setMode('START')" class="py-2.5 rounded-lg text-sm transition bg-amber-500 text-slate-950 shadow-md font-black cursor-pointer">
           🟢 จุดปล่อยตัว (START)
         </button>
-        <button id="btnModeFinish" onclick="setMode('FINISH')" class="py-2.5 rounded-lg text-sm text-slate-400 transition hover:text-white">
+        <button type="button" id="btnModeFinish" onclick="setMode('FINISH')" class="py-2.5 rounded-lg text-sm text-slate-400 transition hover:text-white cursor-pointer">
           🏁 จุดเส้นชัย (FINISH)
         </button>
       </div>
@@ -43,7 +43,7 @@
     <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl text-center">
       <div class="flex justify-between items-center mb-2">
         <span class="text-xs font-semibold text-slate-400">สแกน QR Code ประจำตัวรถ</span>
-        <button id="btnToggleCam" onclick="toggleCamera()" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 text-amber-400 font-bold transition">
+        <button type="button" id="btnToggleCam" onclick="toggleCamera()" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 text-amber-400 font-bold transition cursor-pointer">
           เปิดกล้องสแกน
         </button>
       </div>
@@ -58,32 +58,32 @@
       <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">ป้อนหมายเลข BIB (คีย์บอร์ด / สัมผัส)</label>
       
       <div class="flex gap-2 mb-3">
-        <input type="number" id="inputBib" placeholder="เช่น 101, 205" class="w-full text-3xl font-mono font-black text-center bg-slate-950 border-2 border-slate-700 focus:border-amber-500 rounded-xl py-3 text-white tracking-widest focus:outline-none" onkeydown="if(event.key==='Enter') recordTime()">
-        <button onclick="recordTime()" class="w-2/5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black text-lg md:text-xl rounded-xl shadow-lg transition">
+        <input type="text" id="inputBib" placeholder="เช่น 101, 205" inputmode="numeric" class="w-full text-3xl font-mono font-black text-center bg-slate-950 border-2 border-slate-700 focus:border-amber-500 rounded-xl py-3 text-white tracking-widest focus:outline-none" onkeydown="if(event.key==='Enter') recordTime()">
+        <button type="button" onclick="recordTime()" class="w-2/5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-black text-lg md:text-xl rounded-xl shadow-lg transition cursor-pointer">
           บันทึกเวลา
         </button>
       </div>
 
       <!-- Quick Numpad Buttons (0-9, Backspace, CLR) -->
       <div class="grid grid-cols-3 gap-2">
-        <button onclick="appendNum('1')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl">1</button>
-        <button onclick="appendNum('2')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl">2</button>
-        <button onclick="appendNum('3')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl">3</button>
+        <button type="button" onclick="appendNum('1')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl cursor-pointer">1</button>
+        <button type="button" onclick="appendNum('2')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl cursor-pointer">2</button>
+        <button type="button" onclick="appendNum('3')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl cursor-pointer">3</button>
         
-        <button onclick="appendNum('4')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl">4</button>
-        <button onclick="appendNum('5')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl">5</button>
-        <button onclick="appendNum('6')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl">6</button>
+        <button type="button" onclick="appendNum('4')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl cursor-pointer">4</button>
+        <button type="button" onclick="appendNum('5')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl cursor-pointer">5</button>
+        <button type="button" onclick="appendNum('6')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl cursor-pointer">6</button>
         
-        <button onclick="appendNum('7')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl">7</button>
-        <button onclick="appendNum('8')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl">8</button>
-        <button onclick="appendNum('9')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl">9</button>
+        <button type="button" onclick="appendNum('7')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl cursor-pointer">7</button>
+        <button type="button" onclick="appendNum('8')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl cursor-pointer">8</button>
+        <button type="button" onclick="appendNum('9')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl cursor-pointer">9</button>
         
         <!-- แถวล่างสุด: ลบทีละตัว / เลข 0 / เคลียร์ทั้งหมด -->
-        <button onclick="backspaceNum()" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-400 py-3 rounded-xl font-bold text-base flex items-center justify-center">
+        <button type="button" onclick="backspaceNum()" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-amber-400 py-3 rounded-xl font-bold text-base flex items-center justify-center cursor-pointer">
           ⌫ ลบ
         </button>
-        <button onclick="appendNum('0')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl">0</button>
-        <button onclick="clearNum()" class="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 py-3 rounded-xl font-bold text-base">
+        <button type="button" onclick="appendNum('0')" class="bg-slate-800 hover:bg-slate-700 active:bg-slate-600 py-3 rounded-xl font-bold text-xl cursor-pointer">0</button>
+        <button type="button" onclick="clearNum()" class="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 py-3 rounded-xl font-bold text-base cursor-pointer">
           CLR
         </button>
       </div>
@@ -105,41 +105,46 @@
     // ==========================================
     // ⚠️ ระบุ Web App URL ของ Apps Script (ที่ลงท้ายด้วย /exec)
     // ==========================================
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyfD0Q8z-k6lA9j2W6jFpQ4qN6vLq_example/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzUwHYkF7eiFo-F2OR7A-Ht-Uo5_Oizb6LQhiezq2MWQX4wXJZm2dGW8-PnFVhPsK-/exec';
 
     let currentMode = 'START';
     let html5QrCode = null;
     let isCamScanning = false;
 
-    // ตัวแปรควบคุมระบบป้องกันการสแกนซ้ำ & ควบคุมลูปกล้อง
+    // ตัวแปรควบคุมระบบป้องกันการสแกนซ้ำ & หน่วงเวลา
     let isProcessingScan = false;
     let lastScannedBib = null;
     let lastScannedTime = 0;
-    const DUPLICATE_COOLDOWN_MS = 6000; // ห้ามสแกนเบอร์เดิมซ้ำภายใน 6 วินาที
+    const DUPLICATE_COOLDOWN_MS = 6000;
 
-    // สัญญาณเสียง Beep (Web Audio API)
+    // เสียงสัญญาณ Beep (Web Audio API)
     function playBeepSound() {
       try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        const audioCtx = new AudioContextClass();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // โน้ต A5 ใส ชัดเจน
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime);
         gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.15); // ดัง 150ms
-      } catch(e) {}
+        osc.stop(audioCtx.currentTime + 0.15);
+      } catch(e) {
+        console.warn('Audio not supported:', e);
+      }
     }
 
-    // ตรวจสอบ Network
+    // จัดการสถานะ Network
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
 
     function updateOnlineStatus() {
       const dot = document.getElementById('netStatusDot');
       const text = document.getElementById('netStatusText');
+      if (!dot || !text) return;
       if (navigator.onLine) {
         dot.className = "w-3.5 h-3.5 rounded-full bg-emerald-500 animate-pulse";
         text.className = "text-xs font-bold text-emerald-400";
@@ -152,37 +157,40 @@
       }
     }
 
+    // สลับจุดปล่อยตัว / เส้นชัย
     function setMode(mode) {
       currentMode = mode;
       const btnStart = document.getElementById('btnModeStart');
       const btnFinish = document.getElementById('btnModeFinish');
       if (mode === 'START') {
-        btnStart.className = "py-2.5 rounded-lg text-sm transition bg-amber-500 text-slate-950 shadow-md font-black";
-        btnFinish.className = "py-2.5 rounded-lg text-sm text-slate-400 transition hover:text-white";
+        btnStart.className = "py-2.5 rounded-lg text-sm transition bg-amber-500 text-slate-950 shadow-md font-black cursor-pointer";
+        btnFinish.className = "py-2.5 rounded-lg text-sm text-slate-400 transition hover:text-white cursor-pointer";
       } else {
-        btnFinish.className = "py-2.5 rounded-lg text-sm transition bg-emerald-500 text-slate-950 shadow-md font-black";
-        btnStart.className = "py-2.5 rounded-lg text-sm text-slate-400 transition hover:text-white";
+        btnFinish.className = "py-2.5 rounded-lg text-sm transition bg-emerald-500 text-slate-950 shadow-md font-black cursor-pointer";
+        btnStart.className = "py-2.5 rounded-lg text-sm text-slate-400 transition hover:text-white cursor-pointer";
       }
     }
 
+    // แป้นตัวเลข Numpad
     function appendNum(num) {
       const input = document.getElementById('inputBib');
-      input.value = input.value + num;
+      if (input) input.value = input.value + num;
     }
 
     function backspaceNum() {
       const input = document.getElementById('inputBib');
-      input.value = input.value.slice(0, -1);
+      if (input) input.value = input.value.slice(0, -1);
     }
 
     function clearNum() {
-      document.getElementById('inputBib').value = '';
+      const input = document.getElementById('inputBib');
+      if (input) input.value = '';
     }
 
-    // ฟังก์ชันบันทึกเวลา
+    // บันทึกเวลา
     function recordTime(bibValue, isFromCamera = false) {
       const input = document.getElementById('inputBib');
-      const bib = (bibValue || input.value).toString().trim();
+      const bib = (bibValue || (input ? input.value : '')).toString().trim();
 
       if (!bib) {
         Swal.fire({ icon: 'warning', title: 'กรุณาใส่เบอร์ BIB', timer: 1000, showConfirmButton: false });
@@ -193,7 +201,7 @@
       const localTimeString = now.toLocaleTimeString('th-TH', { hour12: false }) + '.' + ('00' + now.getMilliseconds()).slice(-3);
       
       const logRecord = {
-        logId: 'LOG-' + Date.now() + '-' + Math.floor(Math.random()*1000),
+        logId: 'LOG-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
         bib: bib,
         actionType: currentMode,
         recordedAtLocal: localTimeString,
@@ -201,17 +209,14 @@
         synced: false
       };
 
-      // บันทึกลง LocalStorage ในเครื่อง
       saveToLocal(logRecord);
-      input.value = '';
+      if (input) input.value = '';
 
-      // ส่งสัญญาณเสียงและสั่น
       playBeepSound();
       if (navigator.vibrate) navigator.vibrate(100);
 
       renderHistory();
 
-      // แสดง Popup สรุปเบอร์และเวลา 1.5 วินาที โดยไม่หยุดการทำงานของกล้อง
       const isStart = (currentMode === 'START');
       Swal.fire({
         title: `<div style="font-size: 15px; font-weight: 700; color: ${isStart ? '#f59e0b' : '#10b981'}; text-transform: uppercase; letter-spacing: 1px;">บันทึกจุด ${currentMode} สำเร็จ</div>`,
@@ -231,12 +236,10 @@
         timer: 1500,
         timerProgressBar: true,
         willClose: () => {
-          // ปลดล็อกให้สแกนคันต่อไปได้ทันที
           isProcessingScan = false;
         }
       });
 
-      // ซิงค์ขึ้น Google Sheets
       if (navigator.onLine) {
         syncPendingData();
       }
@@ -258,6 +261,7 @@
       const pending = list.filter(x => !x.synced);
       const badge = document.getElementById('pendingCountBadge');
       const num = document.getElementById('pendingNum');
+      if (!badge || !num) return;
       if (pending.length > 0) {
         badge.classList.remove('hidden');
         num.innerText = pending.length;
@@ -266,7 +270,6 @@
       }
     }
 
-    // ซิงค์ข้อมูลขึ้น Google Sheets ผ่าน fetch API (POST JSON)
     function syncPendingData() {
       const list = getStoredLogs();
       const pending = list.filter(x => !x.synced);
@@ -305,7 +308,10 @@
     function renderHistory() {
       const list = getStoredLogs();
       const container = document.getElementById('historyList');
-      document.getElementById('logCount').innerText = list.length + ' รายการ';
+      const countEl = document.getElementById('logCount');
+      if (countEl) countEl.innerText = list.length + ' รายการ';
+      if (!container) return;
+
       if (list.length === 0) {
         container.innerHTML = '<div class="text-center py-6 text-slate-600 text-xs">ยังไม่มีประวัติการบันทึก</div>';
         return;
@@ -333,8 +339,7 @@
       container.innerHTML = html;
     }
 
-    // เปิด/ปิดกล้อง และสแกน QR Code แบบลื่นไหลไม่ค้าง pause
-   // เปิด/ปิดกล้อง และสแกน QR Code แบบปรับขนาดกล้องอัตโนมัติ
+    // จัดการเปิด/ปิดกล้อง
     function toggleCamera() {
       const container = document.getElementById('reader-container');
       const btn = document.getElementById('btnToggleCam');
@@ -343,44 +348,32 @@
         container.classList.remove('hidden');
         btn.innerText = 'กำลังเปิดกล้อง...';
 
-        // เคลียร์ตัวอ่านเดิมก่อนสร้างใหม่ ป้องกันอินสแตนซ์ค้าง
         if (html5QrCode) {
           try { html5QrCode.clear(); } catch(e){}
         }
 
         html5QrCode = new Html5Qrcode("reader");
 
-        // คำนวณกรอบสแกนตามความกว้างจอจริง (สแกนง่ายและไม่พังบนมือถือ)
-        const qrBoxFunction = function(viewfinderWidth, viewfinderHeight) {
-          const minEdgePercentage = 0.7; // ใช้พื้นที่ 70% ของจอ
-          const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-          const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
-          return {
-            width: qrboxSize,
-            height: qrboxSize
-          };
-        };
-
-        const config = {
-          fps: 15,
-          qrbox: qrBoxFunction,
-          aspectRatio: 1.0
+        const qrBoxConfig = function(viewfinderWidth, viewfinderHeight) {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          const boxSize = Math.floor(minEdge * 0.7);
+          return { width: boxSize, height: boxSize };
         };
 
         html5QrCode.start(
-          { facingMode: "environment" }, // บังคับใช้กล้องหลัง
-          config,
+          { facingMode: "environment" },
+          { fps: 15, qrbox: qrBoxConfig },
           (decodedText) => {
             const now = Date.now();
 
             if (isProcessingScan) return;
 
-            let bibMatch = decodedText.match(/\d+/);
-            let bib = bibMatch ? bibMatch[0] : null;
+            // ดึงตัวเลข BIB ด้วย Regex สะอาด ไม่ Error
+            const match = decodedText.match(/[0-9]+/);
+            const bib = match ? match[0] : null;
 
             if (!bib) return;
 
-            // คูลดาวน์ 6 วินาที ป้องกันเบอร์เดิมยิงซ้ำ
             if (bib === lastScannedBib && (now - lastScannedTime) < DUPLICATE_COOLDOWN_MS) {
               return;
             }
@@ -407,7 +400,7 @@
           Swal.fire({
             icon: 'error',
             title: 'เปิดกล้องไม่สำเร็จ',
-            text: 'กรุณาอนุญาตสิทธิ์เข้าถึงกล้องบนเบราว์เซอร์ (' + err + ')'
+            text: 'กรุณาอนุญาตสิทธิ์การใช้กล้องบนเบราว์เซอร์ (' + err + ')'
           });
         });
 
@@ -426,6 +419,7 @@
       }
     }
 
+    // เริ่มต้นระบบเมื่อโหลดหน้าเสร็จ
     window.onload = function() {
       updateOnlineStatus();
       updatePendingBadge();
