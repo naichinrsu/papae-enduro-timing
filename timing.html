@@ -105,13 +105,13 @@
     // ==========================================
     // ⚠️ ระบุ Web App URL ของ Apps Script (ที่ลงท้ายด้วย /exec)
     // ==========================================
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzUwHYkF7eiFo-F2OR7A-Ht-Uo5_Oizb6LQhiezq2MWQX4wXJZm2dGW8-PnFVhPsK-/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyfD0Q8z-k6lA9j2W6jFpQ4qN6vLq_example/exec';
 
     let currentMode = 'START';
     let html5QrCode = null;
     let isCamScanning = false;
 
-    // ตัวแปรควบคุมระบบป้องกันการสแกนซ้ำ
+    // ตัวแปรควบคุมระบบป้องกันการสแกนซ้ำ & ควบคุมลูปกล้อง
     let isProcessingScan = false;
     let lastScannedBib = null;
     let lastScannedTime = 0;
@@ -211,9 +211,8 @@
 
       renderHistory();
 
-      // แสดง Popup สรุปเบอร์และเวลา 1.8 วินาที
+      // แสดง Popup สรุปเบอร์และเวลา 1.5 วินาที โดยไม่หยุดการทำงานของกล้อง
       const isStart = (currentMode === 'START');
-      Swal.fire({
       Swal.fire({
         title: `<div style="font-size: 15px; font-weight: 700; color: ${isStart ? '#f59e0b' : '#10b981'}; text-transform: uppercase; letter-spacing: 1px;">บันทึกจุด ${currentMode} สำเร็จ</div>`,
         html: `
@@ -229,7 +228,7 @@
         `,
         background: '#0f172a',
         showConfirmButton: false,
-        timer: 1500, // แสดงผล 1.5 วินาที
+        timer: 1500,
         timerProgressBar: true,
         willClose: () => {
           // ปลดล็อกให้สแกนคันต่อไปได้ทันที
@@ -267,7 +266,7 @@
       }
     }
 
-    // ซิงค์ข้อมูลขึ้น Google Sheets พร้อมระบบติดตามผล
+    // ซิงค์ข้อมูลขึ้น Google Sheets ผ่าน fetch API (POST JSON)
     function syncPendingData() {
       const list = getStoredLogs();
       const pending = list.filter(x => !x.synced);
@@ -289,19 +288,16 @@
       .then(res => res.json())
       .then(res => {
         if (res && res.success) {
-          // อัปเดตรายการที่ค้างส่งให้เป็น synced: true
           const updated = list.map(item => ({ ...item, synced: true }));
           localStorage.setItem('timing_logs', JSON.stringify(updated));
           updatePendingBadge();
           renderHistory();
-          console.log('ซิงค์เวลาลง Google Sheets สำเร็จ:', res.count, 'รายการ');
         } else {
-          console.warn('ฝั่งเซิร์ฟเวอร์ตอบกลับไม่สำเร็จ:', res);
           updatePendingBadge();
         }
       })
       .catch(err => {
-        console.error('เชื่อมต่อเพื่อซิงค์ข้อมูลไม่สำเร็จ:', err);
+        console.error('Sync pending logs error:', err);
         updatePendingBadge();
       });
     }
@@ -337,7 +333,7 @@
       container.innerHTML = html;
     }
 
-    // เปิด/ปิดกล้อง และสแกน QR Code พร้อมล็อกการยิงซ้ำ
+    // เปิด/ปิดกล้อง และสแกน QR Code แบบลื่นไหลไม่ค้าง pause
     function toggleCamera() {
       const container = document.getElementById('reader-container');
       const btn = document.getElementById('btnToggleCam');
@@ -355,12 +351,13 @@
           (decodedText) => {
             const now = Date.now();
 
-            // 1. ถ้ากำลังอยู่ในช่วงประมวลผลหรือแสดงผล ปล่อยผ่านทันที ไม่ต้องหยุดกล้อง
+            // 1. ถ้ากำลังอยู่ในช่วงบันทึก/แสดงผลคันก่อนหน้า ให้ปล่อยผ่านโดยไม่ต้องหยุดกล้อง
             if (isProcessingScan) return;
 
             // 2. ดึงเฉพาะตัวเลข BIB
             let bibMatch = decodedText.match(/\d+/);
             let bib = bibMatch ? bibMatch[0] : null;
+
             if (!bib) return;
 
             // 3. ป้องกันยิงเบอร์เดิมซ้ำภายใน 6 วินาที
@@ -368,12 +365,12 @@
               return;
             }
 
-            // ล็อกแฟล็กทันทีเพื่อป้องกันลูปภาพซ้ำ
+            // ล็อกแฟล็กเพื่อบันทึกผล
             isProcessingScan = true;
             lastScannedBib = bib;
             lastScannedTime = now;
 
-            // ส่งบันทึกเวลา (กล้องยังทำงานตามปกติ ไม่ขึ้น Scanner paused)
+            // ส่งไปบันทึกเวลา (กล้องยังทำงานสดต่อเนื่อง ไม่ค้าง Scanner paused)
             recordTime(bib, true);
           },
           (errorMessage) => {}
@@ -396,6 +393,7 @@
         }
       }
     }
+
     window.onload = function() {
       updateOnlineStatus();
       updatePendingBadge();
